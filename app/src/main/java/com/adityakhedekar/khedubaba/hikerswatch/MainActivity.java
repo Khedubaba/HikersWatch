@@ -117,6 +117,7 @@ public class MainActivity extends AppCompatActivity {
                 if (listAddresses.get(0).getPostalCode() != null){
                     address += listAddresses.get(0).getPostalCode() + "\n";
                 }
+
                 if (listAddresses.get(0).getSubAdminArea() != null){
                     address += listAddresses.get(0).getSubAdminArea() + ", ";
                 }
