@@ -8,17 +8,28 @@ import androidx.core.content.ContextCompat;
 import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.location.Address;
+import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.TextView;
+
+import org.w3c.dom.Text;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivity";
+
     LocationManager locationManager;
     LocationListener locationListener;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,7 +40,8 @@ public class MainActivity extends AppCompatActivity {
         locationListener = new LocationListener() {
             @Override
             public void onLocationChanged(Location location) {
-                Log.i(TAG, "Location: " + location.toString());
+//                Log.i(TAG, "Location: " + location);
+                updateLocationInfo(location);
             }
 
             @Override
@@ -48,8 +60,8 @@ public class MainActivity extends AppCompatActivity {
             }
         };
 
-        //Checking permissions
-        if(ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED){
+        //checking permissions
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED){
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
         }
         else{
@@ -61,6 +73,12 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    protected void startListening(){
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED){
+            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locationListener);
+        }
+    }
+
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
@@ -69,13 +87,51 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public void startListening(){
-        if(ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED){
-            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locationListener);
+    protected void updateLocationInfo(Location location){
+//        Log.i(TAG, "Updated Location: " + location);
+        TextView latText = findViewById(R.id.latTextView);
+        TextView longText = findViewById(R.id.longTextView);
+        TextView accuText = findViewById(R.id.accuracyTextView);
+        TextView altText = findViewById(R.id.altitudeTextView);
+        TextView addressText = findViewById(R.id.addressTextView);
+
+        latText.setText("Latitude: " + Double.toString(location.getLatitude()));
+        longText.setText("Longitude: " + Double.toString(location.getLongitude()));
+        altText.setText("Accuracy: " + Double.toString(location.getAccuracy()));
+        altText.setText("Altitude: " + Double.toString(location.getAltitude()));
+
+        String address = "Could not find address.";
+
+        Geocoder geocoder = new Geocoder(this, Locale.getDefault());
+        try {
+            List<Address> listAddresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
+            if (listAddresses != null && listAddresses.size() > 0){
+                address = "Address:\n";
+
+                if (listAddresses.get(0).getThoroughfare() != null){
+                    address += listAddresses.get(0).getThoroughfare() + "\n";
+                }
+                if (listAddresses.get(0).getLocality() != null){
+                    address += listAddresses.get(0).getLocality() + ", ";
+                }
+                if (listAddresses.get(0).getPostalCode() != null){
+                    address += listAddresses.get(0).getPostalCode() + "\n";
+                }
+                if (listAddresses.get(0).getSubAdminArea() != null){
+                    address += listAddresses.get(0).getSubAdminArea() + ", ";
+                }
+                if (listAddresses.get(0).getAdminArea() != null){
+                    address += listAddresses.get(0).getAdminArea();
+                }
+            }
         }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        addressText.setText(address);
+
     }
 
-    public void updateLocationInfo(Location location){
-        Log.i(TAG, "Location: " + location.toString());
-    }
+
 }
